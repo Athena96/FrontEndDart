@@ -16,13 +16,7 @@ Future<void> main() async {
 
 Future<void> _configureAmplify() async {
   await Amplify.addPlugins([
-    AmplifyAuthCognito(
-      secureStorageFactory: AmplifySecureStorage.factoryFrom(
-        macOSOptions:
-            // ignore: invalid_use_of_visible_for_testing_member
-            MacOSSecureStorageOptions(useDataProtection: false),
-      ),
-    ),
+    AmplifyAuthCognito(),
     AmplifyAPI()
   ]);
   try {
