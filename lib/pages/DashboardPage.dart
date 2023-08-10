@@ -34,18 +34,13 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Future<void> fetchResult() async {
     print("fetching data from API");
-    var apiRequest = Amplify.API.post('/ping',
-        body: HttpPayload.json({'num1': '2', 'num2': '3'}),
-        apiName: 'Endpoint');
+    var apiRequest = Amplify.API.get('/recurring', apiName: 'Endpoint');
     var apiResponse = await apiRequest.response;
     var jsonString = apiResponse.decodeBody();
-    Map<String, dynamic> jsonData = json.decode(jsonString);
-    String resultValue = jsonData['result'];
-
-    print('The value is: $resultValue');
-
+    print(" jsonString ");
+    print(jsonString);
     setState(() {
-      result = resultValue;
+      result = jsonString;
     });
   }
 
