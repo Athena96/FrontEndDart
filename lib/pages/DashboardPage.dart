@@ -12,13 +12,19 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> {
   String? user;
-  String? result;
+  String? recurring;
+  String? onetime;
+  String? assets;
+  String? settings;
 
   @override
   void initState() {
     super.initState();
     checkUser();
-    fetchResult();
+    fetchRecurring();
+    fetchOneTime();
+    fetchAssets();
+    fetchSettings();
   }
 
   Future<void> checkUser() async {
@@ -32,15 +38,52 @@ class _DashboardPageState extends State<DashboardPage> {
     });
   }
 
-  Future<void> fetchResult() async {
-    print("fetching data from API");
+  Future<void> fetchRecurring() async {
+    print("fetchRecurring data from API");
+
     var apiRequest = Amplify.API.get('/recurring', apiName: 'Endpoint');
     var apiResponse = await apiRequest.response;
     var jsonString = apiResponse.decodeBody();
-    print(" jsonString ");
+    print("Recurring: ");
     print(jsonString);
     setState(() {
-      result = jsonString;
+      recurring = jsonString;
+    });
+  }
+
+  Future<void> fetchOneTime() async {
+    print("fetchOneTime data from API");
+    var apiRequest = Amplify.API.get('/onetime', apiName: 'Endpoint');
+    var apiResponse = await apiRequest.response;
+    var jsonString = apiResponse.decodeBody();
+    print("One Time: ");
+    print(jsonString);
+    setState(() {
+      onetime = jsonString;
+    });
+  }
+
+  Future<void> fetchAssets() async {
+    print("fetchAssets data from API");
+    var apiRequest = Amplify.API.get('/assets', apiName: 'Endpoint');
+    var apiResponse = await apiRequest.response;
+    var jsonString = apiResponse.decodeBody();
+    print("Assets: ");
+    print(jsonString);
+    setState(() {
+      assets = jsonString;
+    });
+  }
+
+  Future<void> fetchSettings() async {
+    print("fetchSettings data from API");
+    var apiRequest = Amplify.API.get('/settings', apiName: 'Endpoint');
+    var apiResponse = await apiRequest.response;
+    var jsonString = apiResponse.decodeBody();
+    print("Settings: ");
+    print(jsonString);
+    setState(() {
+      settings = jsonString;
     });
   }
 
@@ -57,7 +100,15 @@ class _DashboardPageState extends State<DashboardPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text('Hello, ${user ?? 'Anonymous'}!'),
-            Text('2 + 3 = ${result ?? 'Unknown'}'),
+            Text(''),
+            Text('Recurring: ${recurring ?? 'Unknown'}'),
+            Text(''),
+            Text('Assets: ${assets ?? 'Unknown'}'),
+            Text(''),
+            Text('One Time: ${onetime ?? 'Unknown'}'),
+            Text(''),
+            Text('Settings: ${settings ?? 'Unknown'}'),
+            Text(''),
             ElevatedButton(
               onPressed: () {
                 signOut();
