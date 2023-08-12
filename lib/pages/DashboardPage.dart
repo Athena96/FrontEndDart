@@ -1,12 +1,7 @@
 import 'dart:convert';
-import 'dart:math';
-
 import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:flutter/material.dart';
-import 'package:yahoo_finance_data_reader/yahoo_finance_data_reader.dart';
-
 import '../model/asset.dart';
-import '../model/stock.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -76,37 +71,12 @@ class _DashboardPageState extends State<DashboardPage> {
     var jsonString = apiResponse.decodeBody();
 
     List<dynamic> jsonList = jsonDecode(jsonString);
-
-    // Converting the list of JSON maps to a list of Asset objects
-    List<Stock> stocks = jsonList.map((json) => Stock.fromJson(json)).toList();
-
-    List<Asset> assets = [];
-    for (Stock stock in stocks) {
-      try {
-        print('Stock:  ${stock.ticker}');
-        YahooFinanceResponse response = await YahooFinanceDailyReader()
-            .getDailyDTOs(stock.ticker,
-                startDate: DateTime.now().subtract(Duration(days: 1)));
-
-        for (YahooFinanceCandleData stockData in response.candlesData) {
-          print(stockData);
-          var closePrice = stockData.close;
-          var asset = Asset.from(stock, closePrice);
-          assets.add(asset);
-        }
-      } catch (e) {
-        print('Error');
-        print(e);
-      }
-    }
+    List<Asset> assets = jsonList.map((json) => Asset.fromJson(json)).toList();
 
     String totalValue = Asset.computeTotalAssetValue(assets).toStringAsFixed(2);
     String totalValueStr = 'Total Value: \$$totalValue';
     print(totalValueStr);
     print(assets);
-    // List<String> assetStrings = assets.map((asset) => asset.toString()).toList();
-    // You can now use the assetStrings list, or join them into a single string
-    // String combinedString = assetStrings.join('\n');
     setState(() {
       assetsStr = totalValueStr;
     });
