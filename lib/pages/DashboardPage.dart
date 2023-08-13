@@ -4,6 +4,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:moneyapp_flutter/data/price_point.dart';
 import '../model/asset.dart';
+import 'package:intl/intl.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -16,17 +17,17 @@ class _DashboardPageState extends State<DashboardPage> {
   String? user;
   String? recurring;
   String? onetime;
-  String? assetsStr;
+  String? startingBalance;
   String? settings;
 
   @override
   void initState() {
     super.initState();
     checkUser();
-    fetchRecurring();
-    fetchOneTime();
+    // fetchRecurring();
+    // fetchOneTime();
     fetchAssets();
-    fetchSettings();
+    // fetchSettings();
   }
 
   Future<void> checkUser() async {
@@ -74,13 +75,14 @@ class _DashboardPageState extends State<DashboardPage> {
 
     List<dynamic> jsonList = jsonDecode(jsonString);
     List<Asset> assets = jsonList.map((json) => Asset.fromJson(json)).toList();
-
-    String totalValue = Asset.computeTotalAssetValue(assets).toStringAsFixed(2);
-    String totalValueStr = 'Total Value: \$$totalValue';
+    double totalValue = Asset.computeTotalAssetValue(assets);
+    var formatter = NumberFormat('#,##0.00', 'en_US');
+    String formattedTotalValue = formatter.format(totalValue);
+    String totalValueStr = '\$$formattedTotalValue';
     print(totalValueStr);
     print(assets);
     setState(() {
-      assetsStr = totalValueStr;
+      startingBalance = totalValueStr;
     });
   }
 
@@ -110,13 +112,13 @@ class _DashboardPageState extends State<DashboardPage> {
           children: [
             Text('Hello, ${user ?? 'Anonymous'}!'),
             Text(''),
-            Text('Recurring: ${recurring ?? 'Unknown'}'),
-            Text(''),
-            Text('Assets: ${assetsStr ?? 'Unknown'}'),
-            Text(''),
-            Text('One Time: ${onetime ?? 'Unknown'}'),
-            Text(''),
-            Text('Settings: ${settings ?? 'Unknown'}'),
+            // Text('Recurring: ${recurring ?? 'Unknown'}'),
+            // Text(''),
+            Text('Starting Balance: ${startingBalance ?? '...'}'),
+            // Text(''),
+            // Text('One Time: ${onetime ?? 'Unknown'}'),
+            // Text(''),
+            // Text('Settings: ${settings ?? 'Unknown'}'),
             Text(''),
             AspectRatio(
               aspectRatio: 2,
