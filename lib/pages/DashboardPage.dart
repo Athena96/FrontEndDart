@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:amplify_flutter/amplify_flutter.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:moneyapp_flutter/data/price_point.dart';
 import '../model/asset.dart';
 
 class DashboardPage extends StatefulWidget {
@@ -116,6 +118,24 @@ class _DashboardPageState extends State<DashboardPage> {
             Text(''),
             Text('Settings: ${settings ?? 'Unknown'}'),
             Text(''),
+            AspectRatio(
+              aspectRatio: 2,
+              child: LineChart(
+                LineChartData(
+                  lineBarsData: [
+                    LineChartBarData(
+                      spots: pricePoints
+                          .map((point) => FlSpot(point.x, point.y))
+                          .toList(),
+                      isCurved: false,
+                      // dotData: FlDotData(
+                      //   show: false,
+                      // ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
             ElevatedButton(
               onPressed: () {
                 signOut();
