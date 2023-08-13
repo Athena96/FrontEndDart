@@ -3,8 +3,15 @@ import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:moneyapp_flutter/data/price_point.dart';
+import 'package:moneyapp_flutter/model/Recurring.dart';
+import 'package:moneyapp_flutter/model/settings.dart';
+import '../constants.dart';
 import '../model/asset.dart';
 import 'package:intl/intl.dart';
+
+import '../model/one_time.dart';
+import '../services/monte_carlo_service.dart';
+import '../utils.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -15,60 +22,87 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> {
   String? user;
-  String? recurring;
-  String? onetime;
-  String? startingBalance;
-  String? settings;
+  String? startingBalanceStr;
+  double? successPercent;
+  List<PricePoint> medinaLine = [];
 
   @override
   void initState() {
     super.initState();
     checkUser();
-    // fetchRecurring();
-    // fetchOneTime();
-    fetchAssets();
-    // fetchSettings();
+    getData();
+  }
+
+  Future<void> getData() async {
+    List<Recurring> recurrings = await fetchRecurring();
+    List<OneTime> oneTimes = await fetchOneTime();
+    double startingBalance = await fetchAssets();
+    Settings settings = await fetchSettings();
+
+    double mean =
+        (settings.annualAssetReturnPercent - settings.annualInflationPercent);
+    MonteCarloService monteCarloService =
+        MonteCarloService(numberOfSimulations: 1000);
+
+    int currAge = calculateAge(settings.birthday);
+    int period = endAge - currAge;
+
+    DateTime now = DateTime.now();
+
+    MonteCarloResults results = monteCarloService.simulate(
+        mean: mean,
+        variance: sp500Variance,
+        recurrings: recurrings,
+        numberOfYears: period,
+        startingBalance: startingBalance,
+        numberOfSimulations: 1000,
+        startAge: currAge,
+        oneTimes: oneTimes,
+        currentDate: now);
+    List<PricePoint> newlin = results.medianLine
+        .map((e) => e.y > 10000000
+            ? PricePoint(x: e.x, y: 10000000)
+            : PricePoint(x: e.x, y: e.y))
+        .toList();
+
+    setState(() {
+      successPercent = results.successPercent;
+      medinaLine = newlin;
+    });
   }
 
   Future<void> checkUser() async {
-    print("fetching current signed in user");
     var userObj = await Amplify.Auth.getCurrentUser();
     var signInDetails = userObj.signInDetails.toJson();
     var email = signInDetails['username'].toString();
-    print("email: $email");
     setState(() {
       user = email;
     });
   }
 
-  Future<void> fetchRecurring() async {
-    print("fetchRecurring data from API");
-
+  Future<List<Recurring>> fetchRecurring() async {
     var apiRequest = Amplify.API.get('/recurring', apiName: 'Endpoint');
     var apiResponse = await apiRequest.response;
     var jsonString = apiResponse.decodeBody();
-    print("Recurring: ");
-    print(jsonString);
-    setState(() {
-      recurring = jsonString;
-    });
+    List<dynamic> jsonList = jsonDecode(jsonString);
+
+    List<Recurring> recurrings = jsonList.map((json) {
+      return Recurring.fromJson(json);
+    }).toList();
+    return recurrings;
   }
 
-  Future<void> fetchOneTime() async {
-    print("fetchOneTime data from API");
+  Future<List<OneTime>> fetchOneTime() async {
     var apiRequest = Amplify.API.get('/onetime', apiName: 'Endpoint');
     var apiResponse = await apiRequest.response;
     var jsonString = apiResponse.decodeBody();
-    print("One Time: ");
-    print(jsonString);
-    setState(() {
-      onetime = jsonString;
-    });
+    List<dynamic> jsonList = jsonDecode(jsonString);
+    List<OneTime> onetimes =
+        jsonList.map((json) => OneTime.fromJson(json)).toList();
+    return onetimes;
   }
 
-  Future<void> fetchAssets() async {
-    print("fetchAssets data from API");
-
+  Future<double> fetchAssets() async {
     var apiRequest = Amplify.API.get('/assets', apiName: 'Endpoint');
     var apiResponse = await apiRequest.response;
     var jsonString = apiResponse.decodeBody();
@@ -79,27 +113,23 @@ class _DashboardPageState extends State<DashboardPage> {
     var formatter = NumberFormat('#,##0.00', 'en_US');
     String formattedTotalValue = formatter.format(totalValue);
     String totalValueStr = '\$$formattedTotalValue';
-    print(totalValueStr);
-    print(assets);
     setState(() {
-      startingBalance = totalValueStr;
+      startingBalanceStr = totalValueStr;
     });
+    return totalValue;
   }
 
-  Future<void> fetchSettings() async {
-    print("fetchSettings data from API");
+  Future<Settings> fetchSettings() async {
     var apiRequest = Amplify.API.get('/settings', apiName: 'Endpoint');
     var apiResponse = await apiRequest.response;
     var jsonString = apiResponse.decodeBody();
-    print("Settings: ");
-    print(jsonString);
-    setState(() {
-      settings = jsonString;
-    });
+    List<dynamic> jsonList = jsonDecode(jsonString);
+    List<Settings> settings =
+        jsonList.map((json) => Settings.fromJson(json)).toList();
+    return settings[0];
   }
 
   Future<void> signOut() async {
-    print('signOut');
     await Amplify.Auth.signOut();
   }
 
@@ -112,32 +142,28 @@ class _DashboardPageState extends State<DashboardPage> {
           children: [
             Text('Hello, ${user ?? 'Anonymous'}!'),
             Text(''),
-            // Text('Recurring: ${recurring ?? 'Unknown'}'),
-            // Text(''),
-            Text('Starting Balance: ${startingBalance ?? '...'}'),
-            // Text(''),
-            // Text('One Time: ${onetime ?? 'Unknown'}'),
-            // Text(''),
-            // Text('Settings: ${settings ?? 'Unknown'}'),
+            Text('Starting Balance: ${startingBalanceStr ?? '...'}'),
+            Text(
+                'Success: ${successPercent != null ? successPercent! : '...'}'),
             Text(''),
-            AspectRatio(
-              aspectRatio: 2,
-              child: LineChart(
-                LineChartData(
-                  lineBarsData: [
-                    LineChartBarData(
-                      spots: pricePoints
-                          .map((point) => FlSpot(point.x, point.y))
-                          .toList(),
-                      isCurved: false,
-                      // dotData: FlDotData(
-                      //   show: false,
-                      // ),
+            medinaLine.isNotEmpty
+                ? AspectRatio(
+                    aspectRatio: 2,
+                    child: LineChart(
+                      LineChartData(
+                        maxY: 10000000.0,
+                        lineBarsData: [
+                          LineChartBarData(
+                            spots: medinaLine
+                                .map((point) => FlSpot(point.x, point.y))
+                                .toList(),
+                            isCurved: false,
+                          ),
+                        ],
+                      ),
                     ),
-                  ],
-                ),
-              ),
-            ),
+                  )
+                : Text('.....'),
             ElevatedButton(
               onPressed: () {
                 signOut();

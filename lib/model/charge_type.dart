@@ -1,0 +1,5 @@
+
+enum ChargeType {
+    EXPENSE,
+    INCOME
+}

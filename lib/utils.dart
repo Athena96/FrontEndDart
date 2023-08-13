@@ -21,3 +21,17 @@ MaterialColor createMaterialColor(Color color) {
 
   return MaterialColor(color.value, swatch);
 }
+
+  int calculateAge(DateTime birthdate) {
+    final DateTime today = DateTime.now();
+    int age = today.year - birthdate.year;
+    final int monthDifference = today.month - birthdate.month;
+
+    // Adjust age if birth month hasn't occurred this year or if it's the birth month but the day hasn't occurred
+    if (monthDifference < 0 ||
+        (monthDifference == 0 && today.day < birthdate.day)) {
+      age--;
+    }
+
+    return age;
+  }
