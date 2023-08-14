@@ -23,7 +23,7 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   String? user;
   String? startingBalanceStr;
-  double? successPercent;
+  String? successPercent;
   List<PricePoint> medinaLine = [];
 
   @override
@@ -38,35 +38,36 @@ class _DashboardPageState extends State<DashboardPage> {
     List<OneTime> oneTimes = await fetchOneTime();
     double startingBalance = await fetchAssets();
     Settings settings = await fetchSettings();
-
     double mean =
         (settings.annualAssetReturnPercent - settings.annualInflationPercent);
     MonteCarloService monteCarloService =
         MonteCarloService(numberOfSimulations: 1000);
-
     int currAge = calculateAge(settings.birthday);
     int period = endAge - currAge;
-
     DateTime now = DateTime.now();
 
-    MonteCarloResults results = monteCarloService.simulate(
+    MonteCarloServiceRequest request = MonteCarloServiceRequest(
+        oneTimes: oneTimes,
+        recurrings: recurrings,
+        period: period,
+        startingBalance: startingBalance,
+        currentDate: now,
+        currentAge: currAge,
         mean: mean,
         variance: sp500Variance,
-        recurrings: recurrings,
-        numberOfYears: period,
-        startingBalance: startingBalance,
-        numberOfSimulations: 1000,
-        startAge: currAge,
-        oneTimes: oneTimes,
-        currentDate: now);
-    List<PricePoint> newlin = results.medianLine
+        fees: FEES,
+        numberOfSimulations: 1000);
+    MonteCarloServiceResponse response =
+        monteCarloService.getMonteCarloResponse(request: request);
+    List<PricePoint> newlin = response
+        .getMedian()
         .map((e) => e.y > 10000000
             ? PricePoint(x: e.x, y: 10000000)
             : PricePoint(x: e.x, y: e.y))
         .toList();
 
     setState(() {
-      successPercent = results.successPercent;
+      successPercent = response.getSuccessPercent().toStringAsFixed(2);
       medinaLine = newlin;
     });
   }
@@ -135,16 +136,14 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
+    if (successPercent != null) {
+      return Scaffold(
+        body: Center(
+          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
             Text('Hello, ${user ?? 'Anonymous'}!'),
             Text(''),
             Text('Starting Balance: ${startingBalanceStr ?? '...'}'),
-            Text(
-                'Success: ${successPercent != null ? successPercent! : '...'}'),
+            Text('Success: ${successPercent}'),
             Text(''),
             medinaLine.isNotEmpty
                 ? AspectRatio(
@@ -152,6 +151,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     child: LineChart(
                       LineChartData(
                         maxY: 10000000.0,
+                        minY: 0.0,
                         lineBarsData: [
                           LineChartBarData(
                             spots: medinaLine
@@ -170,9 +170,15 @@ class _DashboardPageState extends State<DashboardPage> {
               },
               child: Text('Sign Out'),
             )
-          ],
+          ]),
         ),
-      ),
-    );
+      );
+    } else {
+      return Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
   }
 }

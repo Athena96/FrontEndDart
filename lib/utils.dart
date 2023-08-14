@@ -22,16 +22,29 @@ MaterialColor createMaterialColor(Color color) {
   return MaterialColor(color.value, swatch);
 }
 
-  int calculateAge(DateTime birthdate) {
-    final DateTime today = DateTime.now();
-    int age = today.year - birthdate.year;
-    final int monthDifference = today.month - birthdate.month;
+int calculateAge(DateTime birthdate) {
+  final DateTime today = DateTime.now();
+  int age = today.year - birthdate.year;
+  final int monthDifference = today.month - birthdate.month;
 
-    // Adjust age if birth month hasn't occurred this year or if it's the birth month but the day hasn't occurred
-    if (monthDifference < 0 ||
-        (monthDifference == 0 && today.day < birthdate.day)) {
-      age--;
-    }
-
-    return age;
+  // Adjust age if birth month hasn't occurred this year or if it's the birth month but the day hasn't occurred
+  if (monthDifference < 0 ||
+      (monthDifference == 0 && today.day < birthdate.day)) {
+    age--;
   }
+
+  return age;
+}
+
+List<double> getColumnFromMatrix(List<List<double>> matrix, int colIdx) {
+  final List<double> col = [];
+  for (int i = 0; i < matrix.length; i++) {
+    col.add(matrix[i][colIdx]);
+  }
+  return col;
+}
+
+double getPercentile(List<double> values, double percent) {
+  final int percentileIdx = (values.length * percent).floor();
+  return values[percentileIdx];
+}

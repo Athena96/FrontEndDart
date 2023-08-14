@@ -5,6 +5,51 @@ import '../data/price_point.dart';
 import '../model/Recurring.dart';
 import '../model/charge_type.dart';
 import '../model/one_time.dart';
+import '../utils.dart';
+
+class MonteCarloServiceRequest {
+  final List<OneTime> oneTimes;
+  final List<Recurring> recurrings;
+  final int period;
+  final double startingBalance;
+  final DateTime currentDate;
+  final int currentAge;
+  final double mean;
+  final double variance;
+  final double fees;
+  final int numberOfSimulations;
+
+  MonteCarloServiceRequest({
+    required this.oneTimes,
+    required this.recurrings,
+    required this.period,
+    required this.startingBalance,
+    required this.currentDate,
+    required this.currentAge,
+    required this.mean,
+    required this.variance,
+    required this.fees,
+    required this.numberOfSimulations,
+  });
+}
+
+class MonteCarloServiceResponse {
+  final List<PricePoint> median;
+  final double successPercent;
+
+  MonteCarloServiceResponse({
+    required this.median,
+    required this.successPercent,
+  });
+
+  List<PricePoint> getMedian() {
+    return median;
+  }
+
+  double getSuccessPercent() {
+    return successPercent;
+  }
+}
 
 class AnnualExpensesIncome {
   final int startAge;
@@ -23,15 +68,7 @@ class AnnualExpensesIncome {
   }
 }
 
-class MonteCarloResults {
-  final List<PricePoint> medianLine;
-  final double successPercent;
-
-  MonteCarloResults({required this.medianLine, required this.successPercent});
-}
-
 class MonteCarloService {
-
   // Number of simulations to run
   final int numberOfSimulations;
 
@@ -45,25 +82,13 @@ class MonteCarloService {
       expIncome.add(AnnualExpensesIncome(
         startAge: recurring.startAge,
         endAge: recurring.endAge,
-        annualExpensesIncome: getIncomeExpenseFromRecurring(recurring) * 12.0,
+        annualExpensesIncome: getLineItemsTotalFromRecurring(recurring) * 12.0,
       ));
     }
     return expIncome;
   }
 
-  Map<int, double> convertOneTimesToMap(List<OneTime> oneTimes) {
-    final Map<int, double> m = {};
-    for (final oneTime in oneTimes) {
-      if (oneTime.chargeType == ChargeType.EXPENSE) {
-        m[oneTime.age] = (m[oneTime.age] ?? 0.0) - oneTime.lineItem.amount;
-      } else {
-        m[oneTime.age] = (m[oneTime.age] ?? 0.0) + oneTime.lineItem.amount;
-      }
-    }
-    return m;
-  }
-
-  double getIncomeExpenseFromRecurring(Recurring recurring) {
+  double getLineItemsTotalFromRecurring(Recurring recurring) {
     double v = 0;
     for (var i in recurring.lineItems) {
       if (recurring.chargeType == ChargeType.EXPENSE) {
@@ -126,19 +151,6 @@ class MonteCarloService {
     return incomesAndExpenses;
   }
 
-  double getPercentile(List<double> values, double percent) {
-    final int percentileIdx = (values.length * percent).floor();
-    return values[percentileIdx];
-  }
-
-  List<double> getColumnFromMatrix(List<List<double>> matrix, int colIdx) {
-    final List<double> col = [];
-    for (int i = 0; i < matrix.length; i++) {
-      col.add(matrix[i][colIdx]);
-    }
-    return col;
-  }
-
   List<double> calculateFutureValue(
     double startingBalance,
     List<double> annualInterestRates,
@@ -164,37 +176,29 @@ class MonteCarloService {
   }
 
   // Simulate method to run the Monte Carlo simulation
-  MonteCarloResults simulate(
-      {required double mean,
-      required double variance,
-      required List<Recurring> recurrings,
-      required List<OneTime> oneTimes,
-      required int numberOfYears,
-      required double startingBalance,
-      required int numberOfSimulations,
-      required int startAge,
-      required DateTime currentDate}) {
-    Map<int, double> oneTimeMap = convertOneTimesToMap(oneTimes);
+  MonteCarloServiceResponse getMonteCarloResponse(
+      {required MonteCarloServiceRequest request}) {
+    Map<int, double> oneTimeMap =
+        OneTime.convertOneTimesToMap(request.oneTimes);
 
     List<AnnualExpensesIncome> annualContribution =
-        getAnnualSpendingIncome(recurrings);
+        getAnnualSpendingIncome(request.recurrings);
 
-    double current_year_progress = (currentDate.month + 1) / 12.0;
+    double current_year_progress = (request.currentDate.month + 1) / 12.0;
     int successCount = 0;
 
     List<List<double>> simulationData =
         List.generate(numberOfSimulations, (i) => []);
 
     for (int i = 0; i < numberOfSimulations; i++) {
-
-      var distributionOfReturns =
-          getNormalDistributionOfReturns(mean, variance, numberOfYears);
+      var distributionOfReturns = getNormalDistributionOfReturns(
+          request.mean, request.variance, request.period);
       var effectiveDistOfReturns = adjustForFees(distributionOfReturns, FEES);
       var incomesAndExpenses = getIncomesAndExpenses(
-          numberOfYears, annualContribution, startAge, oneTimeMap);
+          request.period, annualContribution, request.currentAge, oneTimeMap);
 
       // generate projection
-      var projection = calculateFutureValue(startingBalance,
+      var projection = calculateFutureValue(request.startingBalance,
           effectiveDistOfReturns, incomesAndExpenses, current_year_progress);
       simulationData[i] = [];
       for (int id = 0; id < projection.length; id++) {
@@ -212,7 +216,7 @@ class MonteCarloService {
     // List<double> sevenFive = [];
     // List<double> nineFive = [];
 
-    for (int k = 0; k < numberOfYears; k++) {
+    for (int k = 0; k < request.period; k++) {
       List<double> col = getColumnFromMatrix(simulationData, k);
       col.sort((a, b) => a.compareTo(b));
 
@@ -231,11 +235,11 @@ class MonteCarloService {
       // nineFive.add(nf);
     }
 
-    MonteCarloResults results = MonteCarloResults(
+    MonteCarloServiceResponse response = MonteCarloServiceResponse(
       successPercent: (successCount / numberOfSimulations) * 100.0,
-      medianLine: medLine,
+      median: medLine,
     );
 
-    return results;
+    return response;
   }
 }
