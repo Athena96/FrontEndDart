@@ -4,6 +4,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:moneyapp_flutter/data/price_point.dart';
 import 'package:moneyapp_flutter/model/Recurring.dart';
+import 'package:moneyapp_flutter/model/scenario.dart';
 import 'package:moneyapp_flutter/model/settings.dart';
 import '../constants.dart';
 import '../model/asset.dart';
@@ -56,31 +57,46 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Future<void> getData() async {
-    var recurringRequest =
-        Amplify.API.get('/recurring', apiName: 'Endpoint').response;
-    var oneTimeRequest =
-        Amplify.API.get('/onetime', apiName: 'Endpoint').response;
-    var assetsRequest =
-        Amplify.API.get('/assets', apiName: 'Endpoint').response;
-    var settingsRequest =
-        Amplify.API.get('/settings', apiName: 'Endpoint').response;
-    final responses = await Future.wait(
-        [recurringRequest, oneTimeRequest, assetsRequest, settingsRequest]);
+    // Get list of Scenarios
 
-    // Recurring request
-    List<dynamic> recurringJson = jsonDecode(responses[0].decodeBody());
-    List<Recurring> recurrings = recurringJson.map((json) {
-      return Recurring.fromJson(json);
-    }).toList();
+    // Use Simulation to get ScenarioData
+    var listScenariosRequest =
+        Amplify.API.get('/listScenarios', apiName: 'Endpoint');
+    var listScenariosResponse = await listScenariosRequest.response;
+    var listScenariosJSON = listScenariosResponse.decodeBody();
+    List<dynamic> listScenariosList = jsonDecode(listScenariosJSON);
+    List<Scenario> scenarios =
+        listScenariosList.map((json) => Scenario.fromJson(json)).toList();
 
-    // One Time request
-    List<dynamic> oneTimeJson = jsonDecode(responses[1].decodeBody());
-    List<OneTime> oneTimes =
-        oneTimeJson.map((json) => OneTime.fromJson(json)).toList();
+    Scenario activeScenarioObj = Scenario.getActiveScenario(scenarios);
+    String activeScenarioID = activeScenarioObj.scenarioId;
 
-    // Assets request
-    List<dynamic> assetJson = jsonDecode(responses[2].decodeBody());
+    // Use Simulation to get ScenarioData
+    var getScenarioDataRequest = Amplify.API.get('/getScenarioData',
+        apiName: 'Endpoint', queryParameters: {"scenarioId": activeScenarioID});
+    var getScenarioDataResponse = await getScenarioDataRequest.response;
+    var getScenarioDataJSON = getScenarioDataResponse.decodeBody();
+    dynamic scenarioDataJSON = jsonDecode(getScenarioDataJSON);
+
+    // Assets
+    List<dynamic> assetJson = scenarioDataJSON['assets'];
     List<Asset> assets = assetJson.map((json) => Asset.fromJson(json)).toList();
+
+    // One Time
+    List<dynamic> onetimesJson = scenarioDataJSON['oneTimes'];
+    List<OneTime> onetimes =
+        onetimesJson.map((json) => OneTime.fromJson(json)).toList();
+
+    // Recurrings
+    List<dynamic> recurringsJson = scenarioDataJSON['recurrings'];
+    List<Recurring> recurrings =
+        recurringsJson.map((json) => Recurring.fromJson(json)).toList();
+
+    // Settings
+    dynamic sett = scenarioDataJSON['settings'];
+    Settings settings = Settings.fromJson(sett);
+
+    // comput starting balance
     double totalValue = Asset.computeTotalAssetValue(assets);
     var formatter = NumberFormat('#,##0.00', 'en_US');
     String formattedTotalValue = formatter.format(totalValue);
@@ -89,16 +105,10 @@ class _DashboardPageState extends State<DashboardPage> {
       startingBalanceStr = totalValueStr;
     });
 
-    // Settings request
-    List<dynamic> settingJson = jsonDecode(responses[3].decodeBody());
-    List<Settings> allsettings =
-        settingJson.map((json) => Settings.fromJson(json)).toList();
-    Settings settings = allsettings[0];
-
     MonteCarloService monteCarloService =
         MonteCarloService(numberOfSimulations: 1000);
     MonteCarloServiceRequest request =
-        getMonteCarloRequest(oneTimes, recurrings, assets, settings);
+        getMonteCarloRequest(onetimes, recurrings, assets, settings);
     MonteCarloServiceResponse response =
         monteCarloService.getMonteCarloResponse(request: request);
     List<PricePoint> newlin = response
