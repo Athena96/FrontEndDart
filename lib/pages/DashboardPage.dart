@@ -4,7 +4,6 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:moneyapp_flutter/data/price_point.dart';
 import 'package:moneyapp_flutter/model/Recurring.dart';
-import 'package:moneyapp_flutter/model/scenario.dart';
 import 'package:moneyapp_flutter/model/settings.dart';
 import '../constants.dart';
 import '../model/asset.dart';
@@ -57,24 +56,16 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Future<void> getData() async {
-    // Get list of Scenarios
-
     // Use Simulation to get ScenarioData
-    var listScenariosRequest =
-        Amplify.API.get('/listScenarios', apiName: 'Endpoint');
-    var listScenariosResponse = await listScenariosRequest.response;
-    var listScenariosJSON = listScenariosResponse.decodeBody();
-    List<dynamic> listScenariosList = jsonDecode(listScenariosJSON);
-    List<Scenario> scenarios =
-        listScenariosList.map((json) => Scenario.fromJson(json)).toList();
-
-    Scenario activeScenarioObj = Scenario.getActiveScenario(scenarios);
-    String activeScenarioID = activeScenarioObj.scenarioId;
-
-    // Use Simulation to get ScenarioData
-    var getScenarioDataRequest = Amplify.API.get('/getScenarioData',
-        apiName: 'Endpoint', queryParameters: {"scenarioId": activeScenarioID});
+    DateTime getScenarioDatastartTime = DateTime.now();
+    var getScenarioDataRequest =
+        Amplify.API.get('/getScenarioData', apiName: 'Endpoint');
     var getScenarioDataResponse = await getScenarioDataRequest.response;
+    DateTime getScenarioDataendTime = DateTime.now();
+    int getScenarioDataduration = getScenarioDataendTime
+        .difference(getScenarioDatastartTime)
+        .inMilliseconds;
+    print('getScenarioData Duration: $getScenarioDataduration');
     var getScenarioDataJSON = getScenarioDataResponse.decodeBody();
     dynamic scenarioDataJSON = jsonDecode(getScenarioDataJSON);
 
@@ -117,7 +108,6 @@ class _DashboardPageState extends State<DashboardPage> {
             ? PricePoint(x: e.x, y: 10000000)
             : PricePoint(x: e.x, y: e.y))
         .toList();
-
     setState(() {
       successPercent = response.getSuccessPercent().toStringAsFixed(2);
       medinaLine = newlin;
