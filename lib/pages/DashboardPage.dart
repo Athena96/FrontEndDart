@@ -24,6 +24,7 @@ class _DashboardPageState extends State<DashboardPage> {
   String? user;
   String? startingBalanceStr;
   String? successPercent;
+  Settings? settings;
   List<PricePoint> medinaLine = [];
 
   @override
@@ -86,7 +87,9 @@ class _DashboardPageState extends State<DashboardPage> {
     // Settings
     dynamic sett = scenarioDataJSON['settings'];
     Settings settings = Settings.fromJson(sett);
-
+    setState(() {
+      this.settings = settings;
+    });
     // comput starting balance
     double totalValue = Asset.computeTotalAssetValue(assets);
     var formatter = NumberFormat('#,##0.00', 'en_US');
@@ -102,12 +105,7 @@ class _DashboardPageState extends State<DashboardPage> {
         getMonteCarloRequest(onetimes, recurrings, assets, settings);
     MonteCarloServiceResponse response =
         monteCarloService.getMonteCarloResponse(request: request);
-    List<PricePoint> newlin = response
-        .getMedian()
-        .map((e) => e.y > 10000000
-            ? PricePoint(x: e.x, y: 10000000)
-            : PricePoint(x: e.x, y: e.y))
-        .toList();
+    List<PricePoint> newlin = response.getMedian();
     setState(() {
       successPercent = response.getSuccessPercent().toStringAsFixed(2);
       medinaLine = newlin;
@@ -129,12 +127,12 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (successPercent != null) {
+    if (successPercent != null && settings != null) {
+      var age = calculateAge(settings!.birthday);
+
       return Scaffold(
         body: Center(
           child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Text('Hello, ${user ?? 'Anonymous'}!'),
-            Text(''),
             Text('Starting Balance: ${startingBalanceStr ?? '...'}'),
             Text('Success: ${successPercent}'),
             Text(''),
@@ -143,12 +141,11 @@ class _DashboardPageState extends State<DashboardPage> {
                     aspectRatio: 2,
                     child: LineChart(
                       LineChartData(
-                        maxY: 10000000.0,
                         minY: 0.0,
                         lineBarsData: [
                           LineChartBarData(
                             spots: medinaLine
-                                .map((point) => FlSpot(point.x, point.y))
+                                .map((point) => FlSpot(point.x + age, point.y))
                                 .toList(),
                             isCurved: false,
                           ),
@@ -156,13 +153,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       ),
                     ),
                   )
-                : Text('.....'),
-            ElevatedButton(
-              onPressed: () {
-                signOut();
-              },
-              child: Text('Sign Out'),
-            )
+                : Text('.....')
           ]),
         ),
       );

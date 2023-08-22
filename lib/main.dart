@@ -60,7 +60,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  var selectedIndex = 3;
+  var selectedIndex = 0;
 
   @override
   void initState() {
