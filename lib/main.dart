@@ -61,93 +61,117 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   var selectedIndex = 0;
+  var user = "";
+  
+  Future<void> checkUser() async {
+    var userObj = await Amplify.Auth.getCurrentUser();
+    var signInDetails = userObj.signInDetails.toJson();
+    var email = signInDetails['username'].toString();
+    setState(() {
+      user = email;
+    });
+  }
+
+  static const List<Widget> _widgetOptions = <Widget>[
+    DashboardPage(),
+    WithdrawalsPage(),
+    ContributionsPage(),
+    AssetsPage(),
+    SettingsPage(),
+  ];
 
   @override
   void initState() {
     super.initState();
+    checkUser();
+  }
+
+  void _onItemTapped(int index) {
+    setState(() {
+      selectedIndex = index;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    Widget page;
-    switch (selectedIndex) {
-      case 0:
-        page = DashboardPage();
-        break;
-      case 1:
-        page = WithdrawalsPage();
-        break;
-      case 2:
-        page = ContributionsPage();
-        break;
-      case 3:
-        page = AssetsPage();
-        break;
-      case 4:
-        page = SettingsPage();
-        break;
-      default:
-        throw UnimplementedError('no widget for $selectedIndex');
-    }
-
-    return LayoutBuilder(builder: (context, constraints) {
-      return Scaffold(
-        body: Row(
+    return Scaffold(
+      appBar: AppBar(title: Text('Money Tomorrow')),
+      body: Center(
+        child: _widgetOptions[selectedIndex],
+      ),
+      drawer: Drawer(
+        // Add a ListView to the drawer. This ensures the user can scroll
+        // through the options in the drawer if there isn't enough vertical
+        // space to fit everything.
+        child: ListView(
+          // Important: Remove any padding from the ListView.
+          padding: EdgeInsets.zero,
           children: [
-            SafeArea(
-              child: NavigationRail(
-                extended: constraints.maxWidth >= 600,
-                destinations: [
-                  NavigationRailDestination(
-                    icon: Icon(Icons.leaderboard),
-                    label: Text('Dashboard'),
-                  ),
-                  NavigationRailDestination(
-                    icon: Icon(Icons.remove_circle_outline),
-                    label: Text('Withdrawals'),
-                  ),
-                  NavigationRailDestination(
-                    icon: Icon(Icons.add_circle_outline),
-                    label: Text('Contributions'),
-                  ),
-                  NavigationRailDestination(
-                    icon: Icon(Icons.local_atm),
-                    label: Text('Assets'),
-                  ),
-                  NavigationRailDestination(
-                    icon: Icon(Icons.settings),
-                    label: Text('Settings'),
-                  ),
-                ],
-                selectedIndex: selectedIndex,
-                onDestinationSelected: (value) {
-                  setState(() {
-                    selectedIndex = value;
-                  });
-                },
+            DrawerHeader(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primaryContainer,
+              ),
+              child: Text(
+                user,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                ),
               ),
             ),
-            Expanded(
-              child: Container(
-                color: Theme.of(context).colorScheme.primaryContainer,
-                child: Scaffold(
-                    appBar: AppBar(
-                      title: Text('Money Tomorrow'),
-                      actions: [
-                        IconButton(
-                          icon: Icon(Icons.logout),
-                          onPressed: () async {
-                            await Amplify.Auth.signOut();
-                          },
-                        ),
-                      ],
-                    ),
-                    body: page),
-              ),
+            ListTile(
+              title: const Text('Dashboard'),
+              selected: selectedIndex == 0,
+              onTap: () {
+                // Update the state of the app
+                _onItemTapped(0);
+                // Then close the drawer
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              title: const Text('Withdrawals'),
+              selected: selectedIndex == 1,
+              onTap: () {
+                // Update the state of the app
+                _onItemTapped(1);
+                // Then close the drawer
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              title: const Text('Contributions'),
+              selected: selectedIndex == 2,
+              onTap: () {
+                // Update the state of the app
+                _onItemTapped(2);
+                // Then close the drawer
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              title: const Text('Assets'),
+              selected: selectedIndex == 3,
+              onTap: () {
+                // Update the state of the app
+                _onItemTapped(3);
+                // Then close the drawer
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              title: const Text('Settings'),
+              selected: selectedIndex == 4,
+              onTap: () {
+                // Update the state of the app
+                _onItemTapped(4);
+                // Then close the drawer
+                Navigator.pop(context);
+              },
             ),
           ],
         ),
-      );
-    });
+      ),
+    );
   }
 }
