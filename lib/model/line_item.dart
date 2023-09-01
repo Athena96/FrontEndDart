@@ -7,4 +7,9 @@ class LineItem {
   LineItem.fromJson(Map<String, dynamic> json)
       : title = json['title'],
         amount = double.parse(json['amount'].toString());
+
+  @override
+  String toString() {
+    return '$title: \$$amount (annual: \$${amount * 12.0})';
+  }
 }
