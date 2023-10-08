@@ -1,11 +1,11 @@
 class Asset {
-  final String scenarioDataId;
-  final String type;
-  final String id;
-  final String ticker;
-  final double quantity;
-  final double price;
-  final int hasIndexData;
+  String scenarioDataId;
+  String type;
+  String id;
+  String ticker;
+  double quantity;
+  double price;
+  int hasIndexData;
 
   Asset(this.id, this.scenarioDataId, this.type, this.ticker, this.quantity,
       this.price, this.hasIndexData);
