@@ -80,6 +80,7 @@ class _ContributionsPageState extends State<ContributionsPage> {
     } else {
       return Scaffold(
         body: ListView(
+          padding: const EdgeInsets.all(30.0),
           children: [
             ExpansionPanelList(
               expandedHeaderPadding: EdgeInsets.all(8),
