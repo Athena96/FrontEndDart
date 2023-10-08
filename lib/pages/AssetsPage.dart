@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:moneyapp_flutter/model/asset.dart';
+import 'package:moneyapp_flutter/services/asset_service.dart';
 
 class AssetsPage extends StatefulWidget {
   const AssetsPage({super.key});
@@ -13,25 +14,20 @@ class AssetsPage extends StatefulWidget {
 }
 
 class _AssetsPageState extends State<AssetsPage> {
+  String email = "jaredfranzone@gmail.com";
+  String scenarioId = "s1";
+  String scenarioDataId = "jaredfranzone@gmail.com#s1";
+
   List<Asset> assets = [];
 
   @override
   void initState() {
     super.initState();
-    getData();
+    fetchAssets();
   }
 
-  Future<void> getData() async {
-    var getAssetsData = Amplify.API.get('/listAssets',
-        apiName: 'Endpoint', queryParameters: {"scenarioId": "s1"});
-    var listAssetsResponse = await getAssetsData.response;
-    var getScenarioDataJSON = listAssetsResponse.decodeBody();
-    List<dynamic> scenarioDataJSON = jsonDecode(getScenarioDataJSON);
-
-    // Assets
-    List<Asset> assets =
-        scenarioDataJSON.map((json) => Asset.fromJson(json)).toList();
-
+  Future<void> fetchAssets() async {
+    List<Asset> assets = await listAssets(scenarioId);
     setState(() {
       this.assets = assets;
     });
@@ -116,29 +112,15 @@ class _AssetsPageState extends State<AssetsPage> {
 
   Future<void> addAsset(
       String ticker, double quantity, bool hasIndexData) async {
-    // Dummy Asset for demonstration
-    String scenarioDataId = "s1";
-    String assetId = "jaredfranzone@gmail.com#${scenarioDataId}";
-    Asset newAsset = Asset(assetId, scenarioDataId, 'Assets#${getID()}', ticker,
-        quantity, 1.0, hasIndexData ? 1 : 0);
-
-    // // Add to local state
+    String assetId = getID();
+    String type = "Assets#$assetId";
+    Asset newAsset = Asset(assetId, scenarioDataId, type, ticker, quantity, 1.0,
+        hasIndexData ? 1 : 0);
     setState(() {
       assets.add(newAsset);
     });
 
-    // // Make API call to add to backend
-    var call = Amplify.API.post(
-      '/addAsset',
-      apiName: 'Endpoint',
-      queryParameters: {"scenarioId": "s1"},
-      body: HttpPayload.json({
-        'ticker': ticker,
-        'quantity': quantity,
-        'hasIndexData': hasIndexData ? 1 : 0
-      }),
-    );
-    await call.response;
+    await createAsset(scenarioId, ticker, quantity, hasIndexData);
   }
 
   Future<void> editAsset(Asset assetToEdit, String ticker, double quantity,
@@ -151,40 +133,18 @@ class _AssetsPageState extends State<AssetsPage> {
       assets[idx] = a;
     });
 
-    String scenarioDataId = "jaredfranzone@gmail.com#s1";
-    // // Make API call to add to backend
-    var call = Amplify.API.put(
-      '/updateAsset',
-      apiName: 'Endpoint',
-      queryParameters: {"scenarioId": "s1"},
-      body: HttpPayload.json({
-        'scenarioDataId': scenarioDataId,
-        'typeId': assetToEdit.id,
-        'ticker': ticker,
-        'quantity': quantity,
-        'hasIndexData': hasIndexData ? 1 : 0
-      }),
-    );
-    await call.response;
+    String type = "Assets#${assetToEdit.id}";
+    await updateAsset(
+        scenarioId, scenarioDataId, type, ticker, quantity, hasIndexData);
   }
 
-  Future<void> deleteAsset(Asset asset) async {
-    String fullType = "${asset.type}#${asset.id}";
+  Future<void> removeAsset(Asset asset) async {
     setState(() {
       assets.remove(asset);
     });
 
-    // // Make API call to add to backend
-    var call = Amplify.API.delete(
-      '/deleteAsset',
-      apiName: 'Endpoint',
-      queryParameters: {"scenarioId": "s1"},
-      body: HttpPayload.json({
-        'scenarioDataId': asset.scenarioDataId,
-        'type': fullType,
-      }),
-    );
-    await call.response;
+    String type = "Assets#${asset.id}";
+    await deleteAsset(scenarioId, scenarioDataId, type);
   }
 
   List<Text> getAssetText(List<Asset> assets) {
@@ -232,7 +192,7 @@ class _AssetsPageState extends State<AssetsPage> {
                               showAddAssetDialog(context, false, idx,
                                   assetToEdit: item);
                             } else if (result == 'Delete') {
-                              deleteAsset(item);
+                              removeAsset(item);
                             }
                           },
                           itemBuilder: (BuildContext context) =>
