@@ -146,21 +146,23 @@ class _DashboardPageState extends State<DashboardPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // Starting Balance
+                        Text(
+                          'Starting Balance: ${startingBalanceStr ?? '...'}',
+                          style: TextStyle(
+                            fontSize: 36,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green,
+                          ),
+                        ),
+                        SizedBox(height: 10), // Add some space between the texts
+                        // Success Percent
                         Text(
                           'Success: ${successPercent}%',
                           style: TextStyle(
                             fontSize: 36,
                             fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                        ),
-                        SizedBox(height: 10),
-                        Text(
-                          'Starting Balance: ${startingBalanceStr ?? '...'}',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
+                            color: Colors.blue,
                           ),
                         ),
                       ],
@@ -169,25 +171,32 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
               ),
               SizedBox(height: 20),
-              medinaLine.isNotEmpty
-                  ? AspectRatio(
-                      aspectRatio: 2,
-                      child: LineChart(
-                        LineChartData(
-                          minY: 0.0,
-                          lineBarsData: [
-                            LineChartBarData(
-                              spots: medinaLine
-                                  .map(
-                                      (point) => FlSpot(point.x + age, point.y))
-                                  .toList(),
-                              isCurved: false,
+              // Card for LineChart with padding
+              Card(
+                elevation: 5,
+                margin: EdgeInsets.symmetric(horizontal: 15), // Add side padding
+                child: Padding(
+                  padding: const EdgeInsets.all(15.0),
+                  child: medinaLine.isNotEmpty
+                      ? AspectRatio(
+                          aspectRatio: 2,
+                          child: LineChart(
+                            LineChartData(
+                              minY: 0.0,
+                              lineBarsData: [
+                                LineChartBarData(
+                                  spots: medinaLine
+                                      .map((point) => FlSpot(point.x + age, point.y))
+                                      .toList(),
+                                  isCurved: false,
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                      ),
-                    )
-                  : Text('.....')
+                          ),
+                        )
+                      : Text('.....')
+                ),
+              ),
             ],
           ),
         ),
@@ -200,4 +209,6 @@ class _DashboardPageState extends State<DashboardPage> {
       );
     }
   }
+
+
 }
