@@ -132,29 +132,64 @@ class _DashboardPageState extends State<DashboardPage> {
 
       return Scaffold(
         body: Center(
-          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Text('Starting Balance: ${startingBalanceStr ?? '...'}'),
-            Text('Success: ${successPercent}'),
-            Text(''),
-            medinaLine.isNotEmpty
-                ? AspectRatio(
-                    aspectRatio: 2,
-                    child: LineChart(
-                      LineChartData(
-                        minY: 0.0,
-                        lineBarsData: [
-                          LineChartBarData(
-                            spots: medinaLine
-                                .map((point) => FlSpot(point.x + age, point.y))
-                                .toList(),
-                            isCurved: false,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Align the card to the left
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Card(
+                  elevation: 5,
+                  margin: EdgeInsets.all(15),
+                  child: Padding(
+                    padding: const EdgeInsets.all(15.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Success: ${successPercent}%',
+                          style: TextStyle(
+                            fontSize: 36,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
                           ),
-                        ],
-                      ),
+                        ),
+                        SizedBox(height: 10),
+                        Text(
+                          'Starting Balance: ${startingBalanceStr ?? '...'}',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ],
                     ),
-                  )
-                : Text('.....')
-          ]),
+                  ),
+                ),
+              ),
+              SizedBox(height: 20),
+              medinaLine.isNotEmpty
+                  ? AspectRatio(
+                      aspectRatio: 2,
+                      child: LineChart(
+                        LineChartData(
+                          minY: 0.0,
+                          lineBarsData: [
+                            LineChartBarData(
+                              spots: medinaLine
+                                  .map(
+                                      (point) => FlSpot(point.x + age, point.y))
+                                  .toList(),
+                              isCurved: false,
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  : Text('.....')
+            ],
+          ),
         ),
       );
     } else {
