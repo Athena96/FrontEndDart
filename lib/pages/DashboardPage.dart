@@ -137,7 +137,7 @@ class _DashboardPageState extends State<DashboardPage> {
             children: [
               // Align the card to the left
               Align(
-                alignment: Alignment.centerLeft,
+                alignment: Alignment.center,
                 child: Card(
                   elevation: 5,
                   margin: EdgeInsets.all(15),
@@ -146,23 +146,21 @@ class _DashboardPageState extends State<DashboardPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Starting Balance
-                        Text(
-                          'Starting Balance: ${startingBalanceStr ?? '...'}',
-                          style: TextStyle(
-                            fontSize: 36,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.green,
-                          ),
-                        ),
-                        SizedBox(height: 10), // Add some space between the texts
-                        // Success Percent
                         Text(
                           'Success: ${successPercent}%',
                           style: TextStyle(
                             fontSize: 36,
                             fontWeight: FontWeight.bold,
-                            color: Colors.blue,
+                            color: Colors.black,
+                          ),
+                        ),
+                        SizedBox(height: 10),
+                        Text(
+                          'Starting Balance: ${startingBalanceStr ?? '...'}',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
                           ),
                         ),
                       ],
