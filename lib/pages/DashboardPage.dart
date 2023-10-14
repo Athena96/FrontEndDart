@@ -123,7 +123,7 @@ class _DashboardPageState extends State<DashboardPage> {
         monteCarloService.getMonteCarloResponse(request: request);
     List<PricePoint> newlin = response.getMedian();
     setState(() {
-      successPercent = response.getSuccessPercent().toStringAsFixed(2);
+      successPercent = response.getSuccessPercent().toStringAsFixed(1);
       medinaLine = newlin;
     });
   }
