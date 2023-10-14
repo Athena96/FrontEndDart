@@ -100,7 +100,9 @@ class _DashboardPageState extends State<DashboardPage> {
     // Settings
     dynamic sett = scenarioDataJSON['settings'];
 
-    Settings settings = sett != null ? Settings.fromJson(sett) : new Settings(scenarioDataId, "Settings",  DateTime.now(), 11.7, 3.0);
+    Settings settings = sett != null
+        ? Settings.fromJson(sett)
+        : new Settings(scenarioDataId, "Settings", DateTime.now(), 11.7, 3.0);
     setState(() {
       this.settings = settings;
     });
@@ -132,54 +134,58 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   Widget build(BuildContext context) {
+    double screenWidth = MediaQuery.of(context).size.width;
+    bool isMobile = screenWidth < 600; // Adjust 600 as per your requirement
+
     if (successPercent != null && settings != null) {
       var age = calculateAge(settings!.birthday);
 
       return Scaffold(
         body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Align the card to the left
-              Align(
-                alignment: Alignment.center,
-                child: Card(
+          child: Padding(
+            padding: const EdgeInsets.all(15.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Inner Card for Success and Starting Balance
+                Card(
                   elevation: 5,
-                  margin: EdgeInsets.all(15),
-                  child: Padding(
-                    padding: const EdgeInsets.all(15.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Success: ${successPercent}%',
-                          style: TextStyle(
-                            fontSize: 36,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
+                  child: Container(
+                    width: isMobile
+                        ? double.infinity
+                        : null, // Set width to 100% if mobile
+                    child: Padding(
+                      padding: const EdgeInsets.all(15.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Success: ${successPercent}%',
+                            style: TextStyle(
+                              fontSize: 36,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
                           ),
-                        ),
-                        SizedBox(height: 10),
-                        Text(
-                          'Starting Balance: ${startingBalanceStr ?? '...'}',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
+                          SizedBox(height: 10),
+                          Text(
+                            'Starting Balance: ${startingBalanceStr ?? '...'}',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-              SizedBox(height: 20),
-              // Card for LineChart with padding
-              Card(
-                elevation: 5,
-                margin:
-                    EdgeInsets.symmetric(horizontal: 15), // Add side padding
-                child: Padding(
+                SizedBox(height: 20),
+                // Inner Card for LineChart
+                Card(
+                  elevation: 5,
+                  child: Padding(
                     padding: const EdgeInsets.all(15.0),
                     child: medinaLine.isNotEmpty
                         ? AspectRatio(
@@ -199,9 +205,11 @@ class _DashboardPageState extends State<DashboardPage> {
                               ),
                             ),
                           )
-                        : Text('.....')),
-              ),
-            ],
+                        : Text('.....'),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       );
