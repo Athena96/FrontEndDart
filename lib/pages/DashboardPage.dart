@@ -128,10 +128,6 @@ class _DashboardPageState extends State<DashboardPage> {
     });
   }
 
-  Future<void> signOut() async {
-    await Amplify.Auth.signOut();
-  }
-
   @override
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
@@ -142,12 +138,15 @@ class _DashboardPageState extends State<DashboardPage> {
 
       return Scaffold(
         body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(15.0),
+          child: Container(
+            width: isMobile
+                ? double.infinity
+                : screenWidth * 0.75, // 75% of the screen width if not mobile
+            padding: const EdgeInsets.all(15),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Inner Card for Success and Starting Balance
+                // Card for Success and Starting Balance
                 Card(
                   elevation: 5,
                   child: Container(
@@ -182,7 +181,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   ),
                 ),
                 SizedBox(height: 20),
-                // Inner Card for LineChart
+                // Card for LineChart
                 Card(
                   elevation: 5,
                   child: Padding(
