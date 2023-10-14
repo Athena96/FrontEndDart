@@ -10,7 +10,7 @@ class Settings {
 
   Settings.fromJson(Map<String, dynamic> json)
       : scenarioDataId = json['scenarioDataId'],
-        type = json['type'].split('#').first,
+        type = json['type'],
         birthday = DateTime.fromMillisecondsSinceEpoch(
             int.parse(json['birthday'].toString())),
         annualAssetReturnPercent =

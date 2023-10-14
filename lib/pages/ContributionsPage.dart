@@ -7,15 +7,22 @@ import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:moneyapp_flutter/model/charge_type.dart';
 
 class ContributionsPage extends StatefulWidget {
-  const ContributionsPage({super.key});
+  final String? scenarioId;
+  final String? email;
+  const ContributionsPage(
+      {super.key, required this.scenarioId, required this.email});
 
   @override
   _ContributionsPageState createState() => _ContributionsPageState();
 }
 
 class _ContributionsPageState extends State<ContributionsPage> {
-  List<Recurring> contributions = [];
-  List<OneTime> oneTimeContributions = [];
+  String email = "";
+  String scenarioId = "";
+  String scenarioDataId = "";
+
+  List<Recurring>? contributions;
+  List<OneTime>? oneTimeContributions;
 
   bool isRecurringExpanded = false;
   bool isOneTimeExpanded = false;
@@ -23,13 +30,19 @@ class _ContributionsPageState extends State<ContributionsPage> {
   @override
   void initState() {
     super.initState();
+    if (widget.scenarioId == null || widget.email == null) {
+      throw Exception("scenarioId is required");
+    }
+    email = widget.email!;
+    scenarioId = widget.scenarioId!;
+    scenarioDataId = "$email#$scenarioId";
     getRecurring();
     getOneTime();
   }
 
   Future<void> getRecurring() async {
     var getRecurringData = Amplify.API.get('/listRecurring',
-        apiName: 'Endpoint', queryParameters: {"scenarioId": "s1"});
+        apiName: 'Endpoint', queryParameters: {"scenarioId": this.scenarioId});
     var listRecurringResponse = await getRecurringData.response;
     var getScenarioDataJSON = listRecurringResponse.decodeBody();
     List<dynamic> scenarioDataJSON = jsonDecode(getScenarioDataJSON);
@@ -50,7 +63,7 @@ class _ContributionsPageState extends State<ContributionsPage> {
   Future<void> getOneTime() async {
     // Get One Time Data
     var getOneTimeData = Amplify.API.get('/listOneTime',
-        apiName: 'Endpoint', queryParameters: {"scenarioId": "s1"});
+        apiName: 'Endpoint', queryParameters: {"scenarioId": this.scenarioId});
     var listOneTimeResponse = await getOneTimeData.response;
     var getScenarioOneTimeDataJSON = listOneTimeResponse.decodeBody();
     List<dynamic> scenarioOneTimeDataJSON =
@@ -71,13 +84,14 @@ class _ContributionsPageState extends State<ContributionsPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (contributions.isEmpty && oneTimeContributions.isEmpty) {
+    if (contributions == null && oneTimeContributions == null) {
       return Scaffold(
         body: Center(
           child: CircularProgressIndicator(),
         ),
       );
     } else {
+      
       return Scaffold(
         body: ListView(
           padding: const EdgeInsets.all(30.0),
@@ -103,9 +117,9 @@ class _ContributionsPageState extends State<ContributionsPage> {
                   body: ListView.builder(
                     shrinkWrap: true,
                     physics: NeverScrollableScrollPhysics(),
-                    itemCount: contributions.length,
+                    itemCount: contributions!.length,
                     itemBuilder: (context, index) {
-                      Recurring contribution = contributions[index];
+                      Recurring contribution = contributions![index];
                       // Existing logic for building Recurring list items
 
                       String result = contribution.lineItems
@@ -131,9 +145,9 @@ class _ContributionsPageState extends State<ContributionsPage> {
                   body: ListView.builder(
                     shrinkWrap: true,
                     physics: NeverScrollableScrollPhysics(),
-                    itemCount: oneTimeContributions.length,
+                    itemCount: oneTimeContributions!.length,
                     itemBuilder: (context, index) {
-                      OneTime oneTimeContribution = oneTimeContributions[index];
+                      OneTime oneTimeContribution = oneTimeContributions![index];
 
                       return Card(
                         child: ListTile(

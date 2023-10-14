@@ -7,26 +7,35 @@ import 'package:moneyapp_flutter/model/asset.dart';
 import 'package:moneyapp_flutter/services/asset_service.dart';
 
 class AssetsPage extends StatefulWidget {
-  const AssetsPage({super.key});
+  final String? scenarioId;
+  final String? email;
+  const AssetsPage({Key? key, required this.scenarioId, required this.email})
+      : super(key: key);
 
   @override
   _AssetsPageState createState() => _AssetsPageState();
 }
 
 class _AssetsPageState extends State<AssetsPage> {
-  String email = "jaredfranzone@gmail.com";
-  String scenarioId = "s1";
-  String scenarioDataId = "jaredfranzone@gmail.com#s1";
+  String email = "";
+  String scenarioId = "";
+  String scenarioDataId = "";
 
-  List<Asset> assets = [];
+  List<Asset>? assets;
 
   @override
   void initState() {
     super.initState();
-    fetchAssets();
+    if (widget.scenarioId == null || widget.email == null) {
+      throw Exception("scenarioId is required");
+    }
+    email = widget.email!;
+    scenarioId = widget.scenarioId!;
+    scenarioDataId = "$email#$scenarioId";
+    fetchAssets(scenarioId);
   }
 
-  Future<void> fetchAssets() async {
+  Future<void> fetchAssets(String scenarioId) async {
     List<Asset> assets = await listAssets(scenarioId);
     setState(() {
       this.assets = assets;
@@ -76,11 +85,13 @@ class _AssetsPageState extends State<AssetsPage> {
                   onPressed: () {
                     isAdd
                         ? addAsset(
+                            scenarioId,
                             tickerController.text,
                             double.parse(quantityController.text),
                             hasIndexData,
                           )
                         : editAsset(
+                            scenarioId,
                             assetToEdit!,
                             tickerController.text,
                             double.parse(quantityController.text),
@@ -110,27 +121,27 @@ class _AssetsPageState extends State<AssetsPage> {
     return timestampString;
   }
 
-  Future<void> addAsset(
-      String ticker, double quantity, bool hasIndexData) async {
+  Future<void> addAsset(String scenarioId, String ticker, double quantity,
+      bool hasIndexData) async {
     String assetId = getID();
     String type = "Assets#$assetId";
     Asset newAsset = Asset(assetId, scenarioDataId, type, ticker, quantity, 1.0,
         hasIndexData ? 1 : 0);
     setState(() {
-      assets.add(newAsset);
+      assets!.add(newAsset);
     });
 
     await createAsset(scenarioId, ticker, quantity, hasIndexData);
   }
 
-  Future<void> editAsset(Asset assetToEdit, String ticker, double quantity,
-      bool hasIndexData, int idx) async {
-    Asset a = assets[idx];
+  Future<void> editAsset(String scenarioId, Asset assetToEdit, String ticker,
+      double quantity, bool hasIndexData, int idx) async {
+    Asset a = assets![idx];
     a.ticker = ticker;
     a.quantity = quantity;
     a.hasIndexData = hasIndexData ? 1 : 0;
     setState(() {
-      assets[idx] = a;
+      assets![idx] = a;
     });
 
     String type = "Assets#${assetToEdit.id}";
@@ -138,9 +149,9 @@ class _AssetsPageState extends State<AssetsPage> {
         scenarioId, scenarioDataId, type, ticker, quantity, hasIndexData);
   }
 
-  Future<void> removeAsset(Asset asset) async {
+  Future<void> removeAsset(String scenarioId, Asset asset) async {
     setState(() {
-      assets.remove(asset);
+      assets!.remove(asset);
     });
 
     String type = "Assets#${asset.id}";
@@ -171,12 +182,12 @@ class _AssetsPageState extends State<AssetsPage> {
             ),
           ),
           Expanded(
-            child: assets.isEmpty
+            child: assets == null
                 ? Center(
                     child: CircularProgressIndicator(),
                   )
                 : ListView(
-                    children: assets.asMap().entries.map((entry) {
+                    children: assets!.asMap().entries.map((entry) {
                       int idx = entry.key;
                       Asset item = entry.value;
                       var formatter = NumberFormat('#,##0.00', 'en_US');
@@ -192,7 +203,7 @@ class _AssetsPageState extends State<AssetsPage> {
                               showAddAssetDialog(context, false, idx,
                                   assetToEdit: item);
                             } else if (result == 'Delete') {
-                              removeAsset(item);
+                              removeAsset(scenarioId, item);
                             }
                           },
                           itemBuilder: (BuildContext context) =>

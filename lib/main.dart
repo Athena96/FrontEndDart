@@ -1,7 +1,10 @@
+import 'dart:convert';
+
 import 'package:amplify_api/amplify_api.dart';
 import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
 import 'package:amplify_authenticator/amplify_authenticator.dart';
+import 'package:moneyapp_flutter/model/scenario.dart';
 import 'amplifyconfiguration.dart';
 
 import 'package:flutter/material.dart';
@@ -61,29 +64,78 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   var selectedIndex = 0;
-  var user = "";
-  
-  Future<void> checkUser() async {
+  String? user;
+  String? activeScenarioId;
+
+  Future<void> fetchUserData() async {
     var userObj = await Amplify.Auth.getCurrentUser();
     var signInDetails = userObj.signInDetails.toJson();
     var email = signInDetails['username'].toString();
+    if (email == null) {
+      throw Exception("User not found");
+    }
+
     setState(() {
       user = email;
     });
+    // Call getActiveScenarioId after user is set
+    getActiveScenarioId(user!).then((scenarioId) {
+      setState(() {
+        activeScenarioId = scenarioId;
+      });
+    });
   }
 
-  static const List<Widget> _widgetOptions = <Widget>[
-    DashboardPage(),
-    WithdrawalsPage(),
-    ContributionsPage(),
-    AssetsPage(),
-    SettingsPage(),
-  ];
+  Future<void> _signOut() async {
+    try {
+      await Amplify.Auth.signOut();
+      // Redirect to login screen or perform other actions after signing out
+    } catch (e) {
+      print("Error signing out: $e");
+    }
+  }
+
+  Future<String> getActiveScenarioId(String email) async {
+    var getScenarios = Amplify.API.get('/listScenarios',
+        apiName: 'Endpoint', queryParameters: {"email": email});
+    var listScenariosResponse = await getScenarios.response;
+    var getScenarioDataJSON = listScenariosResponse.decodeBody();
+    List<dynamic> scenarioDataJSON = jsonDecode(getScenarioDataJSON);
+    // convert to list of Scenario objects
+    List<Scenario> scenarios =
+        scenarioDataJSON.map((json) => Scenario.fromJson(json)).toList();
+
+    // get active scenario
+    Scenario activeScenario = Scenario.getActiveScenario(scenarios);
+    return activeScenario.scenarioId;
+  }
+
+  List<Widget> _widgetOptions() {
+    if (user == null || activeScenarioId == null) {
+      return [];
+    }
+    return <Widget>[
+      DashboardPage(
+        scenarioId: activeScenarioId,
+        email: user,
+      ),
+      WithdrawalsPage(
+        scenarioId: activeScenarioId,
+        email: user,
+      ),
+      ContributionsPage(
+        scenarioId: activeScenarioId,
+        email: user,
+      ),
+      AssetsPage(scenarioId: activeScenarioId, email: user),
+      SettingsPage(scenarioId: activeScenarioId, email: user),
+    ];
+  }
 
   @override
   void initState() {
     super.initState();
-    checkUser();
+    fetchUserData();
   }
 
   void _onItemTapped(int index) {
@@ -94,10 +146,26 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    if (this.user == null || this.activeScenarioId == null) {
+      return Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
     return Scaffold(
-      appBar: AppBar(title: Text('Money Tomorrow')),
+      appBar: AppBar(
+        title: Text('Money Tomorrow'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.logout),
+            onPressed: () => _signOut(),
+          ),
+        ],
+      ),
       body: Center(
-        child: _widgetOptions[selectedIndex],
+        child: _widgetOptions()[selectedIndex],
       ),
       drawer: Drawer(
         // Add a ListView to the drawer. This ensures the user can scroll
@@ -112,7 +180,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 color: Theme.of(context).colorScheme.primaryContainer,
               ),
               child: Text(
-                user,
+                user!,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 20,

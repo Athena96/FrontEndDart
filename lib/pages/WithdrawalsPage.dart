@@ -8,15 +8,22 @@ import 'package:moneyapp_flutter/model/one_time.dart';
 import 'package:moneyapp_flutter/model/recurring.dart';
 
 class WithdrawalsPage extends StatefulWidget {
-  const WithdrawalsPage({super.key});
+  final String? scenarioId;
+  final String? email;
+  const WithdrawalsPage(
+      {super.key, required this.scenarioId, required this.email});
 
   @override
   _WithdrawalsPageState createState() => _WithdrawalsPageState();
 }
 
 class _WithdrawalsPageState extends State<WithdrawalsPage> {
-  List<Recurring> withdrawals = [];
-  List<OneTime> oneTimeWithdrawals = [];
+  String email = "";
+  String scenarioId = "";
+  String scenarioDataId = "";
+
+  List<Recurring>? withdrawals;
+  List<OneTime>? oneTimeWithdrawals;
 
   bool isRecurringExpanded = false;
   bool isOneTimeExpanded = false;
@@ -24,13 +31,19 @@ class _WithdrawalsPageState extends State<WithdrawalsPage> {
   @override
   void initState() {
     super.initState();
+    if (widget.scenarioId == null || widget.email == null) {
+      throw Exception("scenarioId is required");
+    }
+    email = widget.email!;
+    scenarioId = widget.scenarioId!;
+    scenarioDataId = "$email#$scenarioId";
     getRecurring();
     getOneTime();
   }
 
   Future<void> getRecurring() async {
     var getRecurringData = Amplify.API.get('/listRecurring',
-        apiName: 'Endpoint', queryParameters: {"scenarioId": "s1"});
+        apiName: 'Endpoint', queryParameters: {"scenarioId": this.scenarioId});
     var listRecurringResponse = await getRecurringData.response;
     var getScenarioDataJSON = listRecurringResponse.decodeBody();
     List<dynamic> scenarioDataJSON = jsonDecode(getScenarioDataJSON);
@@ -50,7 +63,7 @@ class _WithdrawalsPageState extends State<WithdrawalsPage> {
   Future<void> getOneTime() async {
     // Get One Time Data
     var getOneTimeData = Amplify.API.get('/listOneTime',
-        apiName: 'Endpoint', queryParameters: {"scenarioId": "s1"});
+        apiName: 'Endpoint', queryParameters: {"scenarioId": this.scenarioId});
     var listOneTimeResponse = await getOneTimeData.response;
     var getScenarioOneTimeDataJSON = listOneTimeResponse.decodeBody();
     List<dynamic> scenarioOneTimeDataJSON =
@@ -71,7 +84,7 @@ class _WithdrawalsPageState extends State<WithdrawalsPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (withdrawals.isEmpty && oneTimeWithdrawals.isEmpty) {
+    if (withdrawals == null && oneTimeWithdrawals == null) {
       return Scaffold(
         body: Center(
           child: CircularProgressIndicator(),
@@ -103,9 +116,9 @@ class _WithdrawalsPageState extends State<WithdrawalsPage> {
                   body: ListView.builder(
                     shrinkWrap: true,
                     physics: NeverScrollableScrollPhysics(),
-                    itemCount: withdrawals.length,
+                    itemCount: withdrawals!.length,
                     itemBuilder: (context, index) {
-                      Recurring withdrawal = withdrawals[index];
+                      Recurring withdrawal = withdrawals![index];
                       String result = withdrawal.lineItems
                           .map((item) => item.toString())
                           .join(', ');
@@ -129,9 +142,9 @@ class _WithdrawalsPageState extends State<WithdrawalsPage> {
                   body: ListView.builder(
                     shrinkWrap: true,
                     physics: NeverScrollableScrollPhysics(),
-                    itemCount: oneTimeWithdrawals.length,
+                    itemCount: oneTimeWithdrawals!.length,
                     itemBuilder: (context, index) {
-                      OneTime oneTimeWithdrawal = oneTimeWithdrawals[index];
+                      OneTime oneTimeWithdrawal = oneTimeWithdrawals![index];
                       // Logic for building OneTime list items
 
                       return Card(

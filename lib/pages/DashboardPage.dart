@@ -14,14 +14,21 @@ import '../services/monte_carlo_service.dart';
 import '../utils.dart';
 
 class DashboardPage extends StatefulWidget {
-  const DashboardPage({super.key});
+  final String? scenarioId;
+  final String? email;
+
+  const DashboardPage(
+      {super.key, required this.scenarioId, required this.email});
 
   @override
   _DashboardPageState createState() => _DashboardPageState();
 }
 
 class _DashboardPageState extends State<DashboardPage> {
-  String? user;
+  String email = "";
+  String scenarioId = "";
+  String scenarioDataId = "";
+
   String? startingBalanceStr;
   String? successPercent;
   Settings? settings;
@@ -30,7 +37,13 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   void initState() {
     super.initState();
-    checkUser();
+    if (widget.scenarioId == null || widget.email == null) {
+      throw Exception("scenarioId is required");
+    }
+    email = widget.email!;
+    scenarioId = widget.scenarioId!;
+    scenarioDataId = "$email#$scenarioId";
+
     getData();
   }
 
@@ -58,15 +71,15 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Future<void> getData() async {
     // Use Simulation to get ScenarioData
-    DateTime getScenarioDatastartTime = DateTime.now();
+    // DateTime getScenarioDatastartTime = DateTime.now();
     var getScenarioDataRequest =
         Amplify.API.get('/getScenarioData', apiName: 'Endpoint');
     var getScenarioDataResponse = await getScenarioDataRequest.response;
-    DateTime getScenarioDataendTime = DateTime.now();
-    int getScenarioDataduration = getScenarioDataendTime
-        .difference(getScenarioDatastartTime)
-        .inMilliseconds;
-    print('getScenarioData Duration: $getScenarioDataduration');
+    // DateTime getScenarioDataendTime = DateTime.now();
+    // int getScenarioDataduration = getScenarioDataendTime
+    //     .difference(getScenarioDatastartTime)
+    //     .inMilliseconds;
+
     var getScenarioDataJSON = getScenarioDataResponse.decodeBody();
     dynamic scenarioDataJSON = jsonDecode(getScenarioDataJSON);
 
@@ -86,7 +99,8 @@ class _DashboardPageState extends State<DashboardPage> {
 
     // Settings
     dynamic sett = scenarioDataJSON['settings'];
-    Settings settings = Settings.fromJson(sett);
+
+    Settings settings = sett != null ? Settings.fromJson(sett) : new Settings(scenarioDataId, "Settings",  DateTime.now(), 11.7, 3.0);
     setState(() {
       this.settings = settings;
     });
@@ -109,15 +123,6 @@ class _DashboardPageState extends State<DashboardPage> {
     setState(() {
       successPercent = response.getSuccessPercent().toStringAsFixed(2);
       medinaLine = newlin;
-    });
-  }
-
-  Future<void> checkUser() async {
-    var userObj = await Amplify.Auth.getCurrentUser();
-    var signInDetails = userObj.signInDetails.toJson();
-    var email = signInDetails['username'].toString();
-    setState(() {
-      user = email;
     });
   }
 
@@ -172,28 +177,29 @@ class _DashboardPageState extends State<DashboardPage> {
               // Card for LineChart with padding
               Card(
                 elevation: 5,
-                margin: EdgeInsets.symmetric(horizontal: 15), // Add side padding
+                margin:
+                    EdgeInsets.symmetric(horizontal: 15), // Add side padding
                 child: Padding(
-                  padding: const EdgeInsets.all(15.0),
-                  child: medinaLine.isNotEmpty
-                      ? AspectRatio(
-                          aspectRatio: 2,
-                          child: LineChart(
-                            LineChartData(
-                              minY: 0.0,
-                              lineBarsData: [
-                                LineChartBarData(
-                                  spots: medinaLine
-                                      .map((point) => FlSpot(point.x + age, point.y))
-                                      .toList(),
-                                  isCurved: false,
-                                ),
-                              ],
+                    padding: const EdgeInsets.all(15.0),
+                    child: medinaLine.isNotEmpty
+                        ? AspectRatio(
+                            aspectRatio: 2,
+                            child: LineChart(
+                              LineChartData(
+                                minY: 0.0,
+                                lineBarsData: [
+                                  LineChartBarData(
+                                    spots: medinaLine
+                                        .map((point) =>
+                                            FlSpot(point.x + age, point.y))
+                                        .toList(),
+                                    isCurved: false,
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                        )
-                      : Text('.....')
-                ),
+                          )
+                        : Text('.....')),
               ),
             ],
           ),
@@ -207,6 +213,4 @@ class _DashboardPageState extends State<DashboardPage> {
       );
     }
   }
-
-
 }

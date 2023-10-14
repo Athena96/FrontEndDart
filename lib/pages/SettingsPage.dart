@@ -4,13 +4,20 @@ import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:moneyapp_flutter/model/settings.dart';
 
 class SettingsPage extends StatefulWidget {
-  const SettingsPage({super.key});
+  final String? scenarioId;
+  final String? email;
+  const SettingsPage(
+      {super.key, required this.scenarioId, required this.email});
 
   @override
   _SettingsPageState createState() => _SettingsPageState();
 }
 
 class _SettingsPageState extends State<SettingsPage> {
+  String email = "";
+  String scenarioId = "";
+  String scenarioDataId = "";
+
   TextEditingController scenarioDataIdController = TextEditingController();
   TextEditingController typeController = TextEditingController();
   TextEditingController annualAssetReturnPercentController =
@@ -21,13 +28,19 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   void initState() {
     super.initState();
+    if (widget.scenarioId == null || widget.email == null) {
+      throw Exception("scenarioId is required");
+    }
+    email = widget.email!;
+    scenarioId = widget.scenarioId!;
+    scenarioDataId = "$email#$scenarioId";
     getSettings();
   }
 
   Future<Settings> getSettings() async {
     // Get One Time Data
     var getOneTimeData = Amplify.API.get('/getSettings',
-        apiName: 'Endpoint', queryParameters: {"scenarioId": "s1"});
+        apiName: 'Endpoint', queryParameters: {"scenarioId": this.scenarioId});
     var listOneTimeResponse = await getOneTimeData.response;
     var getScenarioOneTimeDataJSON = listOneTimeResponse.decodeBody();
     dynamic settingss = jsonDecode(getScenarioOneTimeDataJSON);
@@ -61,7 +74,7 @@ class _SettingsPageState extends State<SettingsPage> {
             } else if (snapshot.hasError) {
               return Scaffold(
                 body: Center(
-                    child: Center(child: Text('Error: ${snapshot.error}'))),
+                    child: Center(child: Text('Error: ...'))),
               );
             } else if (!snapshot.hasData) {
               return Scaffold(
