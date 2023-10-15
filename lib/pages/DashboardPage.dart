@@ -123,7 +123,7 @@ class _DashboardPageState extends State<DashboardPage> {
         monteCarloService.getMonteCarloResponse(request: request);
     List<PricePoint> newlin = response.getMedian();
     setState(() {
-      successPercent = response.getSuccessPercent().toStringAsFixed(1);
+      successPercent = response.getSuccessPercent().toStringAsFixed(0);
       medinaLine = newlin;
     });
   }
@@ -189,20 +189,35 @@ class _DashboardPageState extends State<DashboardPage> {
                     child: medinaLine.isNotEmpty
                         ? AspectRatio(
                             aspectRatio: 2,
-                            child: LineChart(
-                              LineChartData(
-                                minY: 0.0,
-                                lineBarsData: [
-                                  LineChartBarData(
-                                    spots: medinaLine
-                                        .map((point) =>
-                                            FlSpot(point.x + age, point.y))
-                                        .toList(),
-                                    isCurved: false,
-                                  ),
-                                ],
+                            child: LineChart(LineChartData(
+                              lineTouchData: LineTouchData(
+                                touchTooltipData: LineTouchTooltipData(
+                                  getTooltipItems:
+                                      (List<LineBarSpot> touchedSpots) {
+                                    return touchedSpots
+                                        .map((LineBarSpot touchedSpot) {
+                                      String value = NumberFormat.currency(
+                                              locale: "en_US",
+                                              symbol: "\$",
+                                              decimalDigits: 2)
+                                          .format(touchedSpot.y);
+                                      return LineTooltipItem(value,
+                                          const TextStyle(color: Colors.black));
+                                    }).toList();
+                                  },
+                                ),
                               ),
-                            ),
+                              minY: 0.0,
+                              lineBarsData: [
+                                LineChartBarData(
+                                  spots: medinaLine
+                                      .map((point) =>
+                                          FlSpot(point.x + age, point.y))
+                                      .toList(),
+                                  isCurved: false,
+                                ),
+                              ],
+                            )),
                           )
                         : Text('.....'),
                   ),
