@@ -124,8 +124,8 @@ class _MyHomePageState extends State<MyHomePage> {
         email: user,
       ),
       ContributionsPage(
-        scenarioId: activeScenarioId,
-        email: user,
+        scenarioId: activeScenarioId!,
+        email: user!,
       ),
       AssetsPage(scenarioId: activeScenarioId, email: user),
       SettingsPage(scenarioId: activeScenarioId, email: user),
@@ -146,100 +146,100 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    if (this.user == null || this.activeScenarioId == null) {
+    if (this.user != null && this.activeScenarioId != null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text('Money Tomorrow'),
+          actions: [
+            IconButton(
+              icon: Icon(Icons.logout),
+              onPressed: () => _signOut(),
+            ),
+          ],
+        ),
+        body: Center(
+          child: _widgetOptions()[selectedIndex],
+        ),
+        drawer: Drawer(
+          // Add a ListView to the drawer. This ensures the user can scroll
+          // through the options in the drawer if there isn't enough vertical
+          // space to fit everything.
+          child: ListView(
+            // Important: Remove any padding from the ListView.
+            padding: EdgeInsets.zero,
+            children: [
+              DrawerHeader(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primaryContainer,
+                ),
+                child: Text(
+                  user!,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                  ),
+                ),
+              ),
+              ListTile(
+                title: const Text('Dashboard'),
+                selected: selectedIndex == 0,
+                onTap: () {
+                  // Update the state of the app
+                  _onItemTapped(0);
+                  // Then close the drawer
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                title: const Text('Withdrawals'),
+                selected: selectedIndex == 1,
+                onTap: () {
+                  // Update the state of the app
+                  _onItemTapped(1);
+                  // Then close the drawer
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                title: const Text('Contributions'),
+                selected: selectedIndex == 2,
+                onTap: () {
+                  // Update the state of the app
+                  _onItemTapped(2);
+                  // Then close the drawer
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                title: const Text('Assets'),
+                selected: selectedIndex == 3,
+                onTap: () {
+                  // Update the state of the app
+                  _onItemTapped(3);
+                  // Then close the drawer
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                title: const Text('Settings'),
+                selected: selectedIndex == 4,
+                onTap: () {
+                  // Update the state of the app
+                  _onItemTapped(4);
+                  // Then close the drawer
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          ),
+        ),
+      );
+    } else {
       return Scaffold(
         body: Center(
           child: CircularProgressIndicator(),
         ),
       );
     }
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Money Tomorrow'),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.logout),
-            onPressed: () => _signOut(),
-          ),
-        ],
-      ),
-      body: Center(
-        child: _widgetOptions()[selectedIndex],
-      ),
-      drawer: Drawer(
-        // Add a ListView to the drawer. This ensures the user can scroll
-        // through the options in the drawer if there isn't enough vertical
-        // space to fit everything.
-        child: ListView(
-          // Important: Remove any padding from the ListView.
-          padding: EdgeInsets.zero,
-          children: [
-            DrawerHeader(
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primaryContainer,
-              ),
-              child: Text(
-                user!,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
-                ),
-              ),
-            ),
-            ListTile(
-              title: const Text('Dashboard'),
-              selected: selectedIndex == 0,
-              onTap: () {
-                // Update the state of the app
-                _onItemTapped(0);
-                // Then close the drawer
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              title: const Text('Withdrawals'),
-              selected: selectedIndex == 1,
-              onTap: () {
-                // Update the state of the app
-                _onItemTapped(1);
-                // Then close the drawer
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              title: const Text('Contributions'),
-              selected: selectedIndex == 2,
-              onTap: () {
-                // Update the state of the app
-                _onItemTapped(2);
-                // Then close the drawer
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              title: const Text('Assets'),
-              selected: selectedIndex == 3,
-              onTap: () {
-                // Update the state of the app
-                _onItemTapped(3);
-                // Then close the drawer
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              title: const Text('Settings'),
-              selected: selectedIndex == 4,
-              onTap: () {
-                // Update the state of the app
-                _onItemTapped(4);
-                // Then close the drawer
-                Navigator.pop(context);
-              },
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }

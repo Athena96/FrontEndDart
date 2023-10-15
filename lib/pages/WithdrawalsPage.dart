@@ -84,13 +84,7 @@ class _WithdrawalsPageState extends State<WithdrawalsPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (withdrawals == null && oneTimeWithdrawals == null) {
-      return Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-    } else {
+    if (withdrawals != null && oneTimeWithdrawals != null) {
       return Scaffold(
         body: ListView(
           padding: const EdgeInsets.all(30.0),
@@ -161,6 +155,12 @@ class _WithdrawalsPageState extends State<WithdrawalsPage> {
               ],
             ),
           ],
+        ),
+      );
+    } else {
+      return Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
         ),
       );
     }

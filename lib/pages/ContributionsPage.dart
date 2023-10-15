@@ -7,8 +7,8 @@ import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:moneyapp_flutter/model/charge_type.dart';
 
 class ContributionsPage extends StatefulWidget {
-  final String? scenarioId;
-  final String? email;
+  final String scenarioId;
+  final String email;
   const ContributionsPage(
       {super.key, required this.scenarioId, required this.email});
 
@@ -30,11 +30,11 @@ class _ContributionsPageState extends State<ContributionsPage> {
   @override
   void initState() {
     super.initState();
-    if (widget.scenarioId == null || widget.email == null) {
-      throw Exception("scenarioId is required");
-    }
-    email = widget.email!;
-    scenarioId = widget.scenarioId!;
+    // if (widget.scenarioId == null || widget.email == null) {
+    //   throw Exception("scenarioId is required");
+    // }
+    email = widget.email;
+    scenarioId = widget.scenarioId;
     scenarioDataId = "$email#$scenarioId";
     getRecurring();
     getOneTime();
@@ -84,14 +84,7 @@ class _ContributionsPageState extends State<ContributionsPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (contributions == null && oneTimeContributions == null) {
-      return Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-    } else {
-      
+    if (contributions != null && oneTimeContributions != null) {
       return Scaffold(
         body: ListView(
           padding: const EdgeInsets.all(30.0),
@@ -147,7 +140,8 @@ class _ContributionsPageState extends State<ContributionsPage> {
                     physics: NeverScrollableScrollPhysics(),
                     itemCount: oneTimeContributions!.length,
                     itemBuilder: (context, index) {
-                      OneTime oneTimeContribution = oneTimeContributions![index];
+                      OneTime oneTimeContribution =
+                          oneTimeContributions![index];
 
                       return Card(
                         child: ListTile(
@@ -163,6 +157,12 @@ class _ContributionsPageState extends State<ContributionsPage> {
               ],
             ),
           ],
+        ),
+      );
+    } else {
+      return Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
         ),
       );
     }
