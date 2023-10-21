@@ -6,6 +6,7 @@ import 'package:moneyapp_flutter/model/settings.dart';
 class SettingsPage extends StatefulWidget {
   final String? scenarioId;
   final String? email;
+
   const SettingsPage(
       {super.key, required this.scenarioId, required this.email});
 
@@ -16,15 +17,13 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   String email = "";
   String scenarioId = "";
-  String scenarioDataId = "";
 
-  TextEditingController scenarioDataIdController = TextEditingController();
-  TextEditingController typeController = TextEditingController();
   TextEditingController annualAssetReturnPercentController =
       TextEditingController();
   TextEditingController annualInflationPercentController =
       TextEditingController();
   DateTime selectedDate = DateTime.now();
+
   @override
   void initState() {
     super.initState();
@@ -33,11 +32,10 @@ class _SettingsPageState extends State<SettingsPage> {
     }
     email = widget.email!;
     scenarioId = widget.scenarioId!;
-    scenarioDataId = "$email#$scenarioId";
-    getSettings();
+    fetchInitialValues();
   }
 
-  Future<Settings> getSettings() async {
+  Future<void> fetchInitialValues() async {
     // Get One Time Data
     var getOneTimeData = Amplify.API.get('/getSettings',
         apiName: 'Endpoint', queryParameters: {"scenarioId": this.scenarioId});
@@ -47,86 +45,120 @@ class _SettingsPageState extends State<SettingsPage> {
 
     // Settings
     Settings sett = Settings.fromJson(settingss);
-    return sett;
+    setState(() {
+      annualAssetReturnPercentController.text =
+          sett.annualAssetReturnPercent.toString();
+      annualInflationPercentController.text =
+          sett.annualInflationPercent.toString();
+      selectedDate = sett.birthday;
+    });
+
+    // final response = await http.get(Uri.parse('https://api.example.com/settings'));
+    // if (response.statusCode == 200) {
+    //   final Map<String, dynamic> data = json.decode(response.body);
+    //   setState(() {
+    //     annualAssetReturnPercentController.text = data['annualAssetReturnPercent'].toString();
+    //     annualInflationPercentController.text = data['annualInflationPercent'].toString();
+    //     selectedDate = DateTime.parse(data['birthday']);
+    //   });
+    // } else {
+    //   throw Exception('Failed to load initial values');
+    // }
   }
 
   @override
   void dispose() {
-    scenarioDataIdController.dispose();
-    typeController.dispose();
     annualAssetReturnPercentController.dispose();
     annualInflationPercentController.dispose();
     super.dispose();
   }
 
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: selectedDate,
+      firstDate: DateTime(1900, 1),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null && picked != selectedDate) {
+      setState(() {
+        selectedDate = picked;
+      });
+    }
+  }
+
+  Future<void> updateSettings() async {
+    var call = Amplify.API.put(
+      '/updateSettings',
+      apiName: 'Endpoint',
+      queryParameters: {"scenarioId": scenarioId},
+      body: HttpPayload.json({
+        'birthday': selectedDate.toIso8601String(),
+        'annualAssetReturnPercent': annualAssetReturnPercentController.text,
+        'annualInflationPercent': annualInflationPercentController.text,
+      }),
+    );
+    await call.response;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isDesktop = MediaQuery.of(context).size.width > 600;
     return Scaffold(
-      body: FutureBuilder(
-          future: getSettings(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return Scaffold(
-                body: Center(
-                  child: CircularProgressIndicator(),
+      body: annualAssetReturnPercentController.text.isEmpty &&
+              annualInflationPercentController.text.isEmpty
+          ? Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              child: Center(
+                child: Padding(
+                  padding: isDesktop
+                      ? const EdgeInsets.symmetric(horizontal: 200.0)
+                      : const EdgeInsets.all(0),
+                  child: Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Form(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: <Widget>[
+                                Text(
+                                  "${selectedDate.toLocal()}".split(' ')[0],
+                                ),
+                                ElevatedButton(
+                                  onPressed: () => _selectDate(context),
+                                  child: Text("Select Birthday"),
+                                ),
+                              ],
+                            ),
+                            TextFormField(
+                              controller: annualAssetReturnPercentController,
+                              decoration: InputDecoration(
+                                  labelText: 'Annual Asset Return Percent'),
+                              keyboardType: TextInputType.number,
+                            ),
+                            TextFormField(
+                              controller: annualInflationPercentController,
+                              decoration: InputDecoration(
+                                  labelText: 'Annual Inflation Percent'),
+                              keyboardType: TextInputType.number,
+                            ),
+                            SizedBox(height: 10),
+                            ElevatedButton(
+                              onPressed:
+                                  updateSettings, // Updated to call updateSettings
+                              child: Text('Update Settings'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
-              );
-            } else if (snapshot.hasError) {
-              return Scaffold(
-                body: Center(
-                    child: Center(child: Text('Error: ...'))),
-              );
-            } else if (!snapshot.hasData) {
-              return Scaffold(
-                body: Center(child: Center(child: Text('No Data'))),
-              );
-            } else {
-              // Initialize the controllers and DateTime variable here
-              Settings settings = snapshot.data!;
-              scenarioDataIdController.text = settings.scenarioDataId;
-              typeController.text = settings.type;
-              annualAssetReturnPercentController.text =
-                  settings.annualAssetReturnPercent.toString();
-              annualInflationPercentController.text =
-                  settings.annualInflationPercent.toString();
-              selectedDate = settings.birthday;
-              return Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        TextField(
-                          controller: typeController,
-                          decoration: InputDecoration(labelText: 'Type'),
-                        ),
-                        TextField(
-                          controller: annualAssetReturnPercentController,
-                          decoration: InputDecoration(
-                              labelText: 'Annual Asset Return Percent'),
-                        ),
-                        TextField(
-                          controller: annualInflationPercentController,
-                          decoration: InputDecoration(
-                              labelText: 'Annual Inflation Percent'),
-                        ),
-                        ElevatedButton(
-                          onPressed: () async {
-                            selectedDate = (await showDatePicker(
-                              context: context,
-                              initialDate: selectedDate ?? DateTime.now(),
-                              firstDate: DateTime(1900),
-                              lastDate: DateTime(2101),
-                            ))!;
-
-                            setState(() {});
-                          },
-                          child: Text('Pick Birthday'),
-                        ),
-                        if (selectedDate != null)
-                          Text("Selected Date: $selectedDate"),
-                      ]));
-            }
-          }),
+              ),
+            ),
     );
   }
 }

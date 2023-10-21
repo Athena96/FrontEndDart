@@ -68,6 +68,14 @@ class _MyHomePageState extends State<MyHomePage> {
   String? activeScenarioId;
 
   Future<void> fetchUserData() async {
+    print("fetchUserData");
+
+    // cache user and activeScenarioId
+    if (user != null && activeScenarioId != null) {
+      print("User and activeScenarioId already set");
+      return;
+    }
+
     var userObj = await Amplify.Auth.getCurrentUser();
     var signInDetails = userObj.signInDetails.toJson();
     var email = signInDetails['username'].toString();
