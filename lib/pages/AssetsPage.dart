@@ -49,7 +49,7 @@ class _AssetsPageState extends State<AssetsPage> {
     TextEditingController quantityController =
         TextEditingController(text: assetToEdit?.quantity.toString() ?? '');
     bool hasIndexData = assetToEdit?.hasIndexData == 1 ? true : false;
-    String title = isAdd ? 'Add Asset' : 'Edit Asset';
+    String title = "Save";
     await showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -144,9 +144,8 @@ class _AssetsPageState extends State<AssetsPage> {
       assets![idx] = a;
     });
 
-    String type = "Assets#${assetToEdit.id}";
     await updateAsset(
-        scenarioId, scenarioDataId, type, ticker, quantity, hasIndexData);
+        scenarioId, scenarioDataId, assetToEdit.id, ticker, quantity, hasIndexData);
   }
 
   Future<void> removeAsset(String scenarioId, Asset asset) async {

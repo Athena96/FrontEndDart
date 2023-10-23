@@ -68,8 +68,6 @@ class _MyHomePageState extends State<MyHomePage> {
   String? activeScenarioId;
 
   Future<void> fetchUserData() async {
-    print("fetchUserData");
-
     // cache user and activeScenarioId
     if (user != null && activeScenarioId != null) {
       print("User and activeScenarioId already set");
